@@ -8,6 +8,7 @@ def bairro(bairro = "Copacabana, Rio de Janeiro, Brazil"):
     print("Nós:", len(G.nodes))
     print("Arestas:", len(G.edges))
 
+    
     ox.plot_graph(G)
     origem = list(G.nodes())[0]
     destino = list(G.nodes())[50]
