@@ -1,7 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from graph.data import load_graph
-from graph.algorithms import find_path
-
+from graph.algorithms import *
 app = Flask(__name__)
 
 # Carrega o grafo na inicialização do servidor
@@ -20,7 +19,7 @@ def rota():
         return jsonify({"error": "Parâmetros 'origem' e 'destino' são obrigatórios."}), 400
 
     try:
-        caminho, distancia = find_path(graph, origem, destino)
+        caminho, distancia = dijkstra(origem, destino)
         return jsonify({
             "origem": origem,
             "destino": destino,
@@ -30,6 +29,34 @@ def rota():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/teste')
+def a():
+    origem = request.args.get('origem')
+    destino = request.args.get('destino')
+
+    if not origem or not destino:
+        return jsonify({"error": "Parâmetros 'origem' e 'destino' são obrigatórios."}), 400
+
+    try:
+        origem = int(origem)
+        destino = int(destino)
+
+        G = load_graph_from_db()
+        caminho = dijkstra(G, origem, destino)
+
+        if not caminho:
+            return jsonify({"error": "Nenhum caminho encontrado."}), 404
+
+        G.graph["crs"] = "EPSG:4326"
+
+        filename = plot_route(G, caminho)
+
+        # retorna a imagem salva
+        return send_file(filename, mimetype="image/png")
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
 @app.route('/mensagem')
 def mensagem():
     return "Esta é uma mensagem"

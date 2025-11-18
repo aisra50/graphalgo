@@ -1,68 +1,126 @@
+import psycopg2
+import networkx as nx
+import matplotlib.pyplot as plt
+import osmnx as ox
+from shapely.geometry import LineString
 import heapq
+import math
 
-def find_path(graph, origem, destino):
-    """
-    Algoritmo de Dijkstra para encontrar o menor caminho entre dois nós.
+def load_graph_from_db():
+    G = nx.MultiDiGraph()
+    G.graph["crs"] = "EPSG:4326"
 
-    Parâmetros:
-        graph (dict): dicionário de adjacência, ex:
-            {
-                'A': {'B': 5, 'C': 2},
-                'B': {'A': 5, 'D': 1},
-                'C': {'A': 2, 'D': 7},
-                'D': {'B': 1, 'C': 7}
-            }
-        origem (str): vértice inicial
-        destino (str): vértice final
+    conn = psycopg2.connect("dbname=graphalgo user=gustavo")
+    cur = conn.cursor()
 
-    Retorna:
-        caminho (list): lista de vértices na ordem do trajeto
-        distancia_total (float): custo total do caminho
-    """
+    # Carregar vértices
+    cur.execute("SELECT id, latitude, longitude FROM vertices")
+    for node_id, lat, lon in cur.fetchall():
+        G.add_node(node_id, y=lat, x=lon)
 
-    if origem not in graph or destino not in graph:
-        raise ValueError("Origem ou destino não existem no grafo.")
+    # Carregar arestas com atributos geométricos
+    cur.execute("""
+        SELECT 
+            e.id, e.vertex_start_id, e.vertex_end_id,
+            a.weight_distance
+        FROM edges e
+        JOIN edge_attributes a ON e.id = a.edge_id
+    """)
+    for edge_id, u, v, weight in cur.fetchall():
+        G.add_edge(
+            u, v, 
+            key=edge_id,
+            length=weight,
+        )
 
-    # Distâncias iniciais: infinito para todos, 0 para origem
-    dist = {node: float('inf') for node in graph}
-    dist[origem] = 0
+    cur.close()
+    conn.close()
 
-    # Dicionário para reconstruir o caminho
-    anterior = {node: None for node in graph}
+    return G
 
-    # Fila de prioridade (min-heap)
-    fila = [(0, origem)]  # (distância, nó)
+def dijkstra(G,source, target, weight="length"):
 
-    while fila:
-        dist_atual, atual = heapq.heappop(fila)
+    # distância inicial infinita
+    dist = {node: math.inf for node in G.nodes()}
+    dist[source] = 0
+    
+    # predecessor para reconstruir a rota
+    prev = {}
+    
+    # min-heap (priority queue)
+    pq = [(0, source)]
 
-        # Se chegamos ao destino, podemos encerrar
-        if atual == destino:
+    while pq:
+        current_dist, u = heapq.heappop(pq)
+
+        # se já achamos o destino, pode parar
+        if u == target:
             break
 
-        # Se a distância for maior que o registro atual, ignore (nó desatualizado)
-        if dist_atual > dist[atual]:
+        # ignora estados piores
+        if current_dist > dist[u]:
             continue
 
-        # Percorre vizinhos
-        for vizinho, peso in graph[atual].items():
-            nova_dist = dist_atual + peso
+        # percorre as arestas
+        for v in G.neighbors(u):
+            # MultiDiGraph pode ter várias arestas u->v
+            # pega a menor delas
+            min_weight = math.inf
+            for key in G[u][v]:
+                w = G[u][v][key].get(weight, 1.0)
+                if w < min_weight:
+                    min_weight = w
 
-            # Relaxamento da aresta
-            if nova_dist < dist[vizinho]:
-                dist[vizinho] = nova_dist
-                anterior[vizinho] = atual
-                heapq.heappush(fila, (nova_dist, vizinho))
+            alt = current_dist + min_weight
 
-    # Reconstruir o caminho
-    caminho = []
-    atual = destino
-    while atual is not None:
-        caminho.insert(0, atual)
-        atual = anterior[atual]
+            if alt < dist[v]:
+                dist[v] = alt
+                prev[v] = u
+                heapq.heappush(pq, (alt, v))
 
-    # Se o destino for inalcançável
-    if dist[destino] == float('inf'):
-        raise ValueError(f"Não existe caminho entre {origem} e {destino}.")
+    # reconstrução do caminho
+    if target not in prev and source != target:
+        return None  # sem rota
 
-    return caminho, dist[destino]
+    path = []
+    u = target
+    while True:
+        path.append(u)
+        if u == source:
+            break
+        u = prev[u]
+
+    path.reverse()
+    return path
+
+def plot_route(G, route, filename="rota.png"):
+    # garantir que pasta existe
+
+    # gerar figura do OSMnx
+    fig, ax = ox.plot_graph_route(
+        G,
+        route,
+        route_color="red",
+        route_linewidth=3,
+        node_size=0,
+        bgcolor="white",
+        show=False,   # NÃO mostra na tela
+        close=False   # NÃO fecha a figura automaticamente
+    )
+
+    # salvar imagem
+    fig.savefig(filename, dpi=150, bbox_inches="tight")
+    plt.close(fig)  # fechar para não vazar memória
+    return filename
+
+def plot_graph(G): #Mostra a imagem do bairro
+    ox.plot_graph(
+        G,
+        bgcolor="white",
+        node_size=3,
+        node_color="black",
+        edge_color="gray",
+        edge_linewidth=0.7,
+        show=True,
+        close=True
+    )
