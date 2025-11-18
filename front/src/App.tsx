@@ -12,7 +12,7 @@ function App() {
       console.log("Erro! Destino ou origem inválidos");
     }
 
-    fetch(`http://localhost:5001/teste?origem=${origem}&destino=${destino}`)
+    fetch(`http://localhost:5000/teste?origem=${origem}&destino=${destino}`)
     .then(res=>{return res.blob()})
     .then(blob=>{
       var img = URL.createObjectURL(blob);
