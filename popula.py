@@ -1,40 +1,55 @@
 import osmnx as ox
 import psycopg2
-
+import networkx as nx
 def populate():
     print("Baixando grafo...")
-    G = ox.graph_from_place("Vila Mariana, São Paulo, Brasil", network_type="drive")
+    G = ox.graph_from_place("Copacabana, Rio de Janeiro, Brazil", network_type="drive")
+
+
+    print("Convertendo IDs do OSM → IDs pequenos...")
+    osm_ids = list(G.nodes())
+    mapping = {osm_id: i+1 for i, osm_id in enumerate(osm_ids)}  # 1..N
+    G = nx.relabel_nodes(G, mapping)
 
     print("Conectando ao banco...")
-    conn = psycopg2.connect("dbname=route user=gustavo")  # sem password se seu Postgres não usa
+    conn = psycopg2.connect("dbname=graphalgo user=gustavo")
     cur = conn.cursor()
 
-    # Inserir vértices
     print("Inserindo vértices...")
     for node_id, data in G.nodes(data=True):
         cur.execute("""
-            INSERT INTO vertices (id, lat, lon)
-            VALUES (%s, %s, %s)
-            ON CONFLICT DO NOTHING
-        """, (node_id, data["y"], data["x"]))
+            INSERT INTO vertices (id, name, latitude, longitude)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING
+        """, (node_id, f"node_{node_id}", data["y"], data["x"]))
 
-    # Inserir arestas
-    print("Inserindo arestas e atributos...")
-    for u, v, data in G.edges(data=True):
+    print("Inserindo modo de transporte...")
+
+    for i in range(len(G.edges)):
         cur.execute("""
-            INSERT INTO edges (vertex_from, vertex_to)
-            VALUES (%s, %s)
+                INSERT INTO transport_types (id, type_name, avg_speed_kmh)
+                VALUES (%s, %s, %s)
+                RETURNING id
+                """, (i,f'Moto-taxi{i}',100+i))
+    
+    j = 0
+    print("Inserindo arestas...")
+    for u, v, data in G.edges(data=True):
+        if (u==v):
+            continue
+        cur.execute("""
+            INSERT INTO edges (vertex_start_id, vertex_end_id,transport_type_id)
+            VALUES (%s, %s, %s)
             RETURNING id;
-        """, (u, v))
+        """, (u, v, j))
+        j += 1
         edge_id = cur.fetchone()[0]
 
-        # atributos
         length = data.get("length", 1.0)
-
         cur.execute("""
-            INSERT INTO edge_attributes (edge_id, walk_weight)
-            VALUES (%s, %s)
-        """, (edge_id, length))
+            INSERT INTO edge_attributes (edge_id, weight_distance, weight_time)
+            VALUES (%s, %s, %s)
+        """, (edge_id, length, length))
 
     conn.commit()
     cur.close()
