@@ -7,12 +7,12 @@ import mapaCopa from './assets/copacabana.png';
 function App() {
   const [imgUrl, setImgUrl] = useState<string>(mapaCopa);
 
-  function pedir_caminho_minimo(origem: number | null, destino: number | null) {
+  async function pedir_caminho_minimo(origem: number | null, destino: number | null) {
     if (origem == null || destino == null) {
       console.log("Erro! Destino ou origem inválidos");
     }
 
-    fetch(`localhost:5001/teste?origem=${origem}&destino=${destino}`)
+    fetch(`http://localhost:5001/teste?origem=${origem}&destino=${destino}`)
     .then(res=>{return res.blob()})
     .then(blob=>{
       var img = URL.createObjectURL(blob);
@@ -38,7 +38,7 @@ function App() {
       <div id="input">
         <Autocomplete placeholder="Origem" valores_possiveis={valores} onselect={setOrigem}/>
         <Autocomplete placeholder="Destino" valores_possiveis={valores} onselect={setDestino}/>
-        <button onClick={() => pedir_caminho_minimo(origem, destino)}>Enviar</button>
+        <button onClick={async () => await pedir_caminho_minimo(origem, destino)}>Enviar</button>
       </div>
     </div>
   )
