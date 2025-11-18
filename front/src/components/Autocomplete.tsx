@@ -1,29 +1,53 @@
 import { useState } from "react";
 
-export default function Autocomplete() {
+type par_nomelugar_id = {
+  nome_lugar: string;
+  id: number;
+};
+
+interface AutocompleteProps {
+  placeholder: string;
+  valores_possiveis: par_nomelugar_id[];
+  onselect: (value: number | null) => void;
+}
+
+const Autocomplete: React.FC<AutocompleteProps> = ({ placeholder, valores_possiveis, onselect}) => {
   const [query, setQuery] = useState<string>("");
   const [results, setResults] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
-  const data = [
-    "Spoleto Culinária Italiana, Centro",
-    "Spoleto, Nova Iguaçu",
-    "Spoleto - Culinária Para Todos, Centro",
-    "Spoleto Otica, Copacabana",
-  ];
+  const data = valores_possiveis;
 
-  function handleChange(e:React.ChangeEvent<HTMLInputElement>) {
-    const value = e.target.value;
-    setQuery(value);
-    if (value.trim() === "") {
-      setResults([]);
-      setIsOpen(false);
+  function get_id_from_nome_lugar(nome_lugar: string) : number | null{
+    let id_escolhido: number | null = null;
+
+    for (let valor of valores_possiveis) {
+      if (valor.nome_lugar == nome_lugar) {
+        id_escolhido = valor.id;
+      }
+    }
+
+    return id_escolhido;
+  }
+
+  function handleChange(evento:React.ChangeEvent<HTMLInputElement>) {
+    const lugar_escolhido = evento.target.value;
+
+    setQuery(lugar_escolhido);
+
+    let id_escolhido = get_id_from_nome_lugar(lugar_escolhido);
+    if (id_escolhido != null)
+      onselect(id_escolhido);
+
+    if (lugar_escolhido.trim() === "") {
+      setResults(valores_possiveis.map(x => x.nome_lugar));
+      setIsOpen(true);
       return;
     }
 
     const filtered = data.filter((item) =>
-      item.toLowerCase().includes(value.toLowerCase())
-    );
+      item.nome_lugar.toLowerCase().includes(lugar_escolhido.toLowerCase())
+    ).map(x => x.nome_lugar);
 
     setResults(filtered);
     setIsOpen(true);
@@ -31,6 +55,11 @@ export default function Autocomplete() {
 
   function handleSelect(value:string) {
     setQuery(value);
+
+    let id_escolhido = get_id_from_nome_lugar(value);
+    if (id_escolhido != null)
+      onselect(id_escolhido);
+
     setIsOpen(false);
   }
 
@@ -40,7 +69,7 @@ export default function Autocomplete() {
         type="text"
         value={query}
         onChange={handleChange}
-        placeholder="Pesquise qualquer lugar em Rio de Janeiro e Região"
+        placeholder={placeholder}
         style={{
           width: "100%",
           padding: "12px 14px",
@@ -78,3 +107,5 @@ export default function Autocomplete() {
     </div>
   );
 }
+
+export default Autocomplete;

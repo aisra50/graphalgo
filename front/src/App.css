@@ -12,14 +12,29 @@
 }
 
 #mapa {
+  display: flex;
+  color: #bbbbbb;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
   width: 40vw;
   height: 100vh;
-  background-color: white;
+  background-color: #444444;
+}
+
+#foto_mapa {
+  display: block;
+  width: 35vw;
+  border-radius: 15px;
 }
 
 #input {
   background-color: #bbbbbb;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   width: 40vw;
   height: 100vh;
-
 }
