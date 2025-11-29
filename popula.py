@@ -16,12 +16,22 @@ def populate():
     cur = conn.cursor()
 
     print("Inserindo vértices...")
+    i = 0
     for node_id, data in G.nodes(data=True):
-        cur.execute("""
-            INSERT INTO vertices (id, name, latitude, longitude)
-            VALUES (%s, %s, %s, %s)
-            ON CONFLICT (id) DO NOTHING
-        """, (node_id, f"node_{node_id}", data["y"], data["x"]))
+        i+=1
+        if(i % 5):
+            cur.execute("""
+                INSERT INTO vertices (id, name, latitude, longitude, especial)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO NOTHING
+            """, (node_id, f"node_{node_id}", data["y"], data["x"]),"false")
+        else:
+            cur.execute("""
+                INSERT INTO vertices (id, name, latitude, longitude, especial)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO NOTHING
+            """, (node_id, f"node_{node_id}", data["y"], data["x"]),"true")
+
 
     print("Inserindo períodos")
     cur.execute("""
