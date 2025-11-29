@@ -1,11 +1,10 @@
 from flask import Flask, request, jsonify, send_file
-from graph.data import load_graph
+from graph.data import *
 from graph.algorithms import *
-import psycopg2
+
 app = Flask(__name__)
 
 # Carrega o grafo na inicialização do servidor
-graph = load_graph()
 
 @app.route('/')
 def home():
@@ -97,7 +96,7 @@ def caminho_minimo():
 
 @app.route('/lugares')
 def lugares():
-    conn = psycopg2.connect("dbname=graphalgo user=gustavo")
+    conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
