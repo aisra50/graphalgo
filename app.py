@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from graph.data import load_graph
 from graph.algorithms import *
+import psycopg2
 app = Flask(__name__)
 
 # Carrega o grafo na inicialização do servidor
@@ -37,6 +38,13 @@ def rota():
 
 @app.route('/caminho-minimo', methods=['POST'])
 def caminho_minimo():
+    '''
+        {
+            origem: id
+            destino: id
+            turno: dia ou noite
+        }
+    '''
     data = request.get_json()
 
     # Agora acessamos corretamente os campos
@@ -86,7 +94,28 @@ def caminho_minimo():
             "erro": str(e)
         }), 500
 
-    
+
+@app.route('/lugares')
+def lugares():
+    conn = psycopg2.connect("dbname=graphalgo user=gustavo")
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, name 
+        FROM vertices
+        WHERE especial = TRUE;
+    """)
+
+    resultados = [
+        {"nome": nome, "id": vid}
+        for vid, nome in cur.fetchall()
+    ]
+
+    cur.close()
+    conn.close()
+
+    return jsonify({"lugares": resultados})
+
 @app.route('/mensagem')
 def mensagem():
     return "Esta é uma mensagem"
