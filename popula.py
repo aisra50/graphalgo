@@ -23,8 +23,19 @@ def populate():
             ON CONFLICT (id) DO NOTHING
         """, (node_id, f"node_{node_id}", data["y"], data["x"]))
 
+    print("Inserindo períodos")
+    cur.execute("""
+            INSERT INTO time_periods (id, period_name,start_time,end_time)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id
+            """, (0,f'Dia','06:00:01', '18:00:00')) # Período do dia
+    cur.execute("""
+            INSERT INTO time_periods (id, period_name,start_time,end_time)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id
+            """, (1,f'Noite','18:00:01','06:00:00' )) # Período da noite
+   
     print("Inserindo modo de transporte...")
-
     for i in range(len(G.edges)):
         cur.execute("""
                 INSERT INTO transport_types (id, type_name, avg_speed_kmh)
@@ -47,9 +58,9 @@ def populate():
 
         length = data.get("length", 1.0)
         cur.execute("""
-            INSERT INTO edge_attributes (edge_id, weight_distance, weight_time)
-            VALUES (%s, %s, %s)
-        """, (edge_id, length, length))
+            INSERT INTO edge_attributes (edge_id, weight_distance, weight_time, time_period_id)
+            VALUES (%s, %s, %s, %s)
+        """, (edge_id, length, length, 0))
 
     conn.commit()
     cur.close()
