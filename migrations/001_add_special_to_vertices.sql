@@ -1,0 +1,2 @@
+ALTER TABLE vertices
+    ADD COLUMN especial BOOLEAN DEFAULT FALSE;
