@@ -1,0 +1,5 @@
+{
+  "name": "GraphToGo",
+  "description": "Sistema de mobilidade urbana otimizado para diferentes meios de transporte (carro, transporte público, bicicleta e a pé).",
+  "requestFramePermissions": []
+}

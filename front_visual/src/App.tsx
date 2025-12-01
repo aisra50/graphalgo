@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import Map from './components/Map';
 import Sidebar from './components/Sidebar';
 import { RouteData, Theme } from './types';
-import { calculateRoute } from './services/geminiService';
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>(Theme.DAY);
@@ -21,8 +20,8 @@ const App: React.FC = () => {
     try {
 
       // Repassa o turno para o back
-      const data = await calculateRoute(origin, destination, turno);
-      setRouteData(data);
+      //const data = await calculateRoute(origin, destination, turno);
+      //setRouteData(data);
     } catch (err) {
       console.error("Failed to fetch route:", err);
       setError("Não foi possível calcular a rota.");
