@@ -10,18 +10,20 @@ interface TabsProps {
     setActiveTab: () => void,
     activeTab: string,
     isDark: boolean,
+    setMostraMapa: () => void,
 }
 
 const Tabs: React.FC<TabsProps> = ({
     setActiveTab,
     activeTab,
     isDark,
+    setMostraMapa
 }) => {
 
     return (
         <div className={`flex p-1 rounded-xl mb-6 ${isDark ? 'bg-slate-800' : 'bg-gray-100'}`}>
           <button
-            onClick={() => setActiveTab('route')}
+            onClick={() => { setActiveTab('route'); setMostraMapa(false); }}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
               activeTab === 'route'
                 ? isDark
@@ -35,7 +37,7 @@ const Tabs: React.FC<TabsProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('meeting')}
+            onClick={() => { setActiveTab('meeting'); setMostraMapa(false) }}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
               activeTab === 'meeting'
                 ? isDark
@@ -49,7 +51,7 @@ const Tabs: React.FC<TabsProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('connectivity')}
+            onClick={() => {setActiveTab('connectivity'); setMostraMapa(false) }}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
               activeTab === 'connectivity'
                 ? isDark

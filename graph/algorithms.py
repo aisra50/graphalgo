@@ -60,6 +60,51 @@ def dijkstra(G,source, target, weight="length"):
     path.reverse()
     return path
 
+def floyd_warshall(G, weight="length"):
+    nodes = sorted(G.nodes())
+    n = len(nodes) + 1
+
+    dist = [[math.inf] * n for _ in range(n)]
+    nxt  = [[None] * n for _ in range(n)]
+
+    # Distância zero para cada nó → ele mesmo
+    for u in nodes:
+        dist[u][u] = 0
+        nxt[u][u] = u
+
+
+    # Inicializar distâncias a partir das arestas do grafo
+    for u in nodes:
+        for v in G.neighbors(u):
+
+            # Menor peso entre múltiplas arestas (igual ao Dijkstra)
+            min_weight = math.inf
+            for key in G[u][v]:
+                w = G[u][v][key].get(weight, math.inf)
+                if w < min_weight:
+                    min_weight = w
+
+            dist[u][v] = min_weight
+            nxt[u][v] = v
+
+    # Floyd–Warshall
+    for k in nodes:
+        for i in nodes:
+            if dist[i][k] == math.inf:
+                continue
+
+            for j in nodes:
+                if dist[k][j] == math.inf:
+                    continue
+                alt = dist[i][k] + dist[k][j]
+
+                if alt < dist[i][j]:
+                    dist[i][j] = alt
+                    nxt[i][j] = nxt[i][k]
+
+    return dist, nxt, nodes
+
+
 def plot_route(G, route, filename="rota.png"):
     # garantir que pasta existe
 

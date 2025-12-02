@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Lugar } from '../../types';
 
 import { 
   MapPin, 
@@ -7,10 +8,12 @@ import {
 
 interface ComponenteConexoProps {
     isDark: boolean,
+    lugares: Lugar[]
 }
 
 const ComponenteConexo: React.FC<ComponenteConexoProps> = ({
     isDark,
+    lugares
 }) => {
   // Connectivity State
   const [connDestination, setConnDestination] = useState('');

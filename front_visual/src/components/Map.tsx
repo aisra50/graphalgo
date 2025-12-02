@@ -1,14 +1,15 @@
 import React from 'react';
-import { RouteData, Theme } from '../types';
+import { Theme } from '../types';
 import { Map as MapIcon } from 'lucide-react';
 
 //Mock visual do mapa até o sistema de mapa real ser implementado
 interface MapProps {
-  routeData: RouteData | null;
   theme: Theme;
+  showMap: boolean;
+  imageUrl: string;
 }
 
-const Map: React.FC<MapProps> = ({ routeData, theme }) => {
+const Map: React.FC<MapProps> = ({ theme, showMap, imageUrl }) => {
   const isDark = theme === Theme.NIGHT;
 
   return (
@@ -17,6 +18,7 @@ const Map: React.FC<MapProps> = ({ routeData, theme }) => {
         isDark ? 'bg-slate-950' : 'bg-gray-100'
       }`}
     >
+      {!showMap &&
       <div
         className={`
           w-full max-w-sm aspect-[9/19.5] rounded-3xl border-4 shadow-2xl
@@ -46,29 +48,10 @@ const Map: React.FC<MapProps> = ({ routeData, theme }) => {
         <p className="text-sm opacity-60 max-w-[220px] leading-relaxed">
           Um mapa real será renderizado aqui em breve. Por enquanto, esta é apenas a área visual.
         </p>
-
-        {routeData && (
-          <div
-            className={`
-              mt-8 px-4 py-2 rounded-lg border text-xs font-mono
-              ${isDark ? 'bg-slate-900/70 border-slate-700' : 'bg-white/90 border-gray-300'}
-            `}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span className="truncate max-w-[160px]">
-                {routeData.origin.name}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="truncate max-w-[160px]">
-                {routeData.destination.name}
-              </span>
-            </div>
-          </div>
-        )}
+      </div>
+      }
+      <div>
+        {showMap && <img src={`${imageUrl}?ts=${Date.now()}&t=${showMap}`}/>}
       </div>
     </div>
   );

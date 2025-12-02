@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Lugar } from '../../types';
+import AutoCompleteInput from '../AutoCompleteInput';
 
 import { 
   MapPin, 
@@ -7,27 +9,68 @@ import {
 
 interface PontoEncontroProps {
     isDark: boolean,
+    lugares: Lugar[],
+    setMostraMapa: () => void
 }
 
 
 const PontoEncontro: React.FC<PontoEncontroProps> = ({
     isDark,
+    lugares,
+    setMostraMapa
 }) => {
-    const [destino, setDestino] = useState<string>('');
-    const [lugaresAmigos, setLugaresAmigos] = useState<string[]>(['', '']);
+    const [lugaresAmigosInput, setLugaresAmigosInput] = useState<string[]>(['', '']);
+    const [lugaresAmigos, setLugaresAmigos] = useState<Lugar[]>([null, null]);
+
+    function handleEncontroSubmit () {
+        if (lugaresAmigos.some(x => x == null)) {
+            console.error('Endereço de amigo inválido');
+            return;
+        }
+
+        const request = JSON.stringify({ 'casas-amigos': [...lugaresAmigos.map(x => x.id)] });
+        console.log(request)
+
+        fetch('http://localhost:5000/ponto-encontro', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(
+                {
+                    'casas-amigos': [...lugaresAmigos.map(x => x.id)]
+                }
+            )
+          })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`erro HTTP! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Dados recebidos:', data);
+        setMostraMapa(false);
+        setTimeout(() => setMostraMapa(true), 10);
+        
+      })
+      .catch(error => {
+        console.error('Houve um problema ao obter dados de lugares:', error);
+        setMostraMapa(false);
+      });      
+
+    }
     
-    const adicionaAmigo = () => setLugaresAmigos([...lugaresAmigos, '']);
+    const adicionaAmigo = () => {
+        setLugaresAmigosInput([...lugaresAmigosInput, ''])
+        setLugaresAmigos([... lugaresAmigos, null])
+    };
     const removeAmigo = (i: number) => {
-        if (lugaresAmigos.length > 2) {
+        if (lugaresAmigosInput.length > 2) {
+            setLugaresAmigosInput(lugaresAmigosInput.filter((_, idx) => idx !== i));
             setLugaresAmigos(lugaresAmigos.filter((_, idx) => idx !== i));
         }
     }
-
-    const atualizaAmigo = (i: number, value: string) => {
-        const lista = [...lugaresAmigos];
-        lista[i] = value;
-        setLugaresAmigos(lista);
-    };
 
     return (
         <div className="animate-in fade-in slide-in-from-right-4 duration-300">
@@ -41,57 +84,23 @@ const PontoEncontro: React.FC<PontoEncontroProps> = ({
             Informe os endereços dos amigos que participarão do encontro. O sistema encontrará o melhor ponto central.
         </div>
 
-        {/* DESTINO DO ENCONTRO */}
-        <div className="mb-6">
-            <label className="text-xs font-semibold uppercase tracking-wider opacity-70">
-            Destino do Encontro
-            </label>
-
-            <div
-            className={`flex items-center px-3 py-2 rounded-lg border transition-all ${
-                isDark
-                ? 'bg-slate-800 border-slate-700 focus-within:border-indigo-500'
-                : 'bg-gray-50 border-gray-200 focus-within:border-indigo-500'
-            }`}
-            >
-            <MapPin className={`w-5 h-5 mr-3 text-indigo-500`} />
-            <input
-                type="text"
-                placeholder="Ex: Hotel Copacabana Palace"
-                value={destino}
-                onChange={(e) => setDestino(e.target.value)}
-                className="bg-transparent border-none outline-none w-full text-sm font-medium"
-            />
-            </div>
-        </div>
-        
-
         {/* AMIGOS (vários campos dinâmicos) */}
         <div className="space-y-4">
-            {lugaresAmigos.map((val, idx) => (
+            {lugaresAmigosInput.map((val, idx) => (
             <div key={idx}>
-                <label className="text-xs font-semibold uppercase tracking-wider opacity-70">
-                Amigo {idx + 1}
-                </label>
-
-                <div
-                className={`flex items-center px-3 py-2 rounded-lg border transition-all ${
-                    isDark
-                    ? 'bg-slate-800 border-slate-700 focus-within:border-indigo-500'
-                    : 'bg-gray-50 border-gray-200 focus-within:border-indigo-500'
-                }`}
+                <AutoCompleteInput
+                    label={`Amigo ${idx + 1}`}
+                    textValue={lugaresAmigosInput[idx]}
+                    onUpdateTextValue={(str) => setLugaresAmigosInput(prev => prev.map((value, index) => index === idx ? str : value))}
+                    onUpdateChosenPlace={(opt) => setLugaresAmigos(prev => prev.map((value, index) => index === idx ? opt : value))}
+                    options={lugares}
+                    placeholder='Endereço do amigo'
+                    icon={<Users className="w-5 h-5 mr-3 text-emerald-500" />}
+                    disabled={false}
+                    isDark={isDark}
+                    iconColorClass={isDark ? 'text-indigo-400' : 'text-indigo-600'}
                 >
-                <Users className="w-5 h-5 mr-3 text-emerald-500" />
-
-                <input
-                    type="text"
-                    placeholder="Endereço do amigo"
-                    value={val}
-                    onChange={(e) => atualizaAmigo(idx, e.target.value)}
-                    className="bg-transparent border-none outline-none w-full text-sm font-medium"
-                />
-
-                {lugaresAmigos.length > 2 && (
+                {lugaresAmigosInput.length > 2 && (
                     <button
                     onClick={() => removeAmigo(idx)}
                     type="button"
@@ -100,7 +109,7 @@ const PontoEncontro: React.FC<PontoEncontroProps> = ({
                     X
                     </button>
                 )}
-                </div>
+              </AutoCompleteInput>
             </div>
             ))}
         </div>
@@ -111,6 +120,13 @@ const PontoEncontro: React.FC<PontoEncontroProps> = ({
             className="mt-4 w-full py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700"
         >
             + Adicionar amigo
+        </button>
+         <button
+            type="button"
+            onClick={handleEncontroSubmit}
+            className="mt-4 w-full py-2 rounded-lg bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700"
+        >
+            Buscar ponto de encontro
         </button>
         </div>
     )

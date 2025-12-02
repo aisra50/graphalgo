@@ -1,13 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Map from './components/Map';
 import Sidebar from './components/Sidebar';
-import { RouteData, Theme } from './types';
+import { Lugar, Theme } from './types';
+import imagemMapa from '../../rota.png';
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>(Theme.DAY);
-  const [routeData, setRouteData] = useState<RouteData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lugares, setLugares] = useState<Lugar[]>([]);
+
+  const [mostraMapa, setMostraMapa] = useState<boolean>(false);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === Theme.DAY ? Theme.NIGHT : Theme.DAY));
@@ -30,6 +33,23 @@ const App: React.FC = () => {
     }
   }, []);
 
+  useEffect(() => {
+    fetch('http://localhost:5000/lugares')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`erro HTTP! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Dados recebidos:', data);
+        setLugares(data?.lugares == null ? [] : data.lugares);
+      })
+      .catch(error => {
+        console.error('Houve um problema ao obter dados de lugares:', error);
+      });
+  }, [])
+
   return (
     <div className={`flex flex-col md:flex-row h-screen w-screen overflow-hidden transition-colors duration-300 ${
       theme === Theme.NIGHT ? 'bg-slate-950' : 'bg-gray-100'
@@ -40,15 +60,16 @@ const App: React.FC = () => {
         <Sidebar 
           onCalculate={handleCalculateRoute} 
           loading={loading}
-          routeData={routeData}
           theme={theme}
+          lugares={lugares}
           onToggleTheme={toggleTheme}
+          setMostraMapa={setMostraMapa}
         />
       </div>
 
       {/* Map Area */}
       <div className="h-1/2 md:h-full flex-1 relative z-10 order-1 md:order-2">
-        <Map routeData={routeData} theme={theme} />
+        <Map theme={theme} showMap={mostraMapa} imageUrl={imagemMapa}/>
         
         {/* Error Toast */}
         {error && (

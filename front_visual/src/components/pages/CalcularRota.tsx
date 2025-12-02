@@ -5,33 +5,80 @@ import {
   Search
 } from 'lucide-react';
 
+import { Lugar } from '../../types';
+
+import AutocompleteInput from '../AutoCompleteInput';
+
 interface CalcularRotaProps {
   isDark: boolean;
   loading: boolean;
+  lugares: Lugar[];
+  setMostraMapa: () => void;
 }
 
 
-function calculaRota(origem: string, destino: string, turno: string)
+function calculaRota(origem: number, destino: number, turno: string, setMostraMapa: (x:boolean) => void)
 {
-
+    console.log(JSON.stringify(
+            {
+                'origem': origem,
+                'destino': destino,
+                'turno': turno
+            }
+        ))
+    fetch('http://localhost:5000/caminho-minimo', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(
+            {
+                'origem': origem,
+                'destino': destino,
+                'turno': turno
+            }
+        )
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`erro HTTP! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        console.log('Dados recebidos:', data);
+        setMostraMapa(false);
+        setTimeout(() => setMostraMapa(true), 10);
+        
+      })
+      .catch(error => {
+        console.error('Houve um problema ao obter dados de lugares:', error);
+        setMostraMapa(false);
+      });      
 }
 
 const CalcularRota: React.FC<CalcularRotaProps> = ({
     isDark, 
-    loading
+    loading,
+    lugares,
+    setMostraMapa
 }) => {
-    const [origem, setOrigem] = useState<string>('');
-    const [destino, setDestino] = useState<string>('');
-    
+    const [inputOrigem, setInputOrigem] = useState<string>('');
+    const [inputDestino, setInputDestino] = useState<string>('');
+
+    const [origem, setOrigem] = useState<Lugar>(null);
+    const [destino, setDestino] = useState<Lugar>(null);
+
+
     function getCurrentTurno () {
         return isDark ? 'noite' : 'dia';
     }
 
     function handleRouteSubmit(e: React.FormEvent) {
         e.preventDefault();
-        if (!origin.trim() || !destino.trim()) return;
+        if (!origem?.id || !destino.id) return;
 
-        calculaRota(origem, destino, getCurrentTurno());
+        calculaRota(origem.id, destino.id, getCurrentTurno(), setMostraMapa);
     }
 
     return (
@@ -39,60 +86,30 @@ const CalcularRota: React.FC<CalcularRotaProps> = ({
             <form onSubmit={handleRouteSubmit} className="space-y-4">
 
                 {/* ORIGEM */}
-                <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider opacity-70">
-                    Origem
-                </label>
-                <div
-                    className={`flex items-center px-3 py-2 rounded-lg border transition-all ${
-                    isDark
-                        ? 'bg-slate-800 border-slate-700 focus-within:border-indigo-500'
-                        : 'bg-gray-50 border-gray-200 focus-within:border-indigo-500'
-                    }`}
-                >
-                    <MapPin
-                    className={`w-5 h-5 mr-3 ${
-                        isDark ? 'text-emerald-400' : 'text-emerald-600'
-                    }`}
-                    />
-                    <input
-                    type="text"
-                    value={origem}
-                    onChange={(e) => setOrigem(e.target.value)}
-                    placeholder="Ex: Forte de Copacabana"
-                    disabled={loading}
-                    className="bg-transparent border-none outline-none w-full text-sm font-medium"
-                    />
-                </div>
-                </div>
-
+                <AutocompleteInput 
+                    label="Origem" 
+                    textValue={inputOrigem}
+                    onUpdateTextValue={setInputOrigem}
+                    onUpdateChosenPlace={setOrigem}
+                    options={lugares} 
+                    placeholder='Ex: Forte de Copacabana' 
+                    icon={<MapPin className={`w-5 h-5 ${isDark ? 'text-green-400' : 'text-green-600'}`}/>}
+                    isDark={isDark}
+                    iconColorClass={isDark ? 'text-emerald-400' : 'text-emerald-600'}
+                />
                 {/* DESTINO */}
-                <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider opacity-70">
-                    Destino
-                </label>
-                <div
-                    className={`flex items-center px-3 py-2 rounded-lg border transition-all ${
-                    isDark
-                        ? 'bg-slate-800 border-slate-700 focus-within:border-indigo-500'
-                        : 'bg-gray-50 border-gray-200 focus-within:border-indigo-500'
-                    }`}
-                >
-                    <MapPin
-                    className={`w-5 h-5 mr-3 ${
-                        isDark ? 'text-red-400' : 'text-red-600'
-                    }`}
-                    />
-                    <input
-                    type="text"
-                    value={destino}
-                    onChange={(e) => setDestino(e.target.value)}
-                    placeholder="Ex: Hotel Copacabana Palace"
-                    disabled={loading}
-                    className="bg-transparent border-none outline-none w-full text-sm font-medium"
-                    />
-                </div>
-                </div>
+                <AutocompleteInput 
+                    label="Destino" 
+                    textValue={inputDestino}
+                    onUpdateTextValue={setInputDestino}
+                    onUpdateChosenPlace={setDestino}
+                    options={lugares} 
+                    placeholder='Ex: Hotel Copacabana Palace' 
+                    icon={<MapPin
+                    className={`w-5 h-5 mr-3 ${isDark ? 'text-red-400' : 'text-red-600'}`}/>}
+                    isDark={isDark}
+                    iconColorClass={isDark ? 'text-emerald-400' : 'text-emerald-600'}
+                />
 
                 <button
                 type="submit"

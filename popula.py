@@ -12,25 +12,18 @@ def populate():
     G = nx.relabel_nodes(G, mapping)
 
     print("Conectando ao banco...")
-    conn = psycopg2.connect("dbname=graphalgo user=gustavo")
+    conn = psycopg2.connect("dbname=graphalgo user=leao")
     cur = conn.cursor()
 
     print("Inserindo vértices...")
     i = 0
     for node_id, data in G.nodes(data=True):
         i+=1
-        if(i % 5):
-            cur.execute("""
-                INSERT INTO vertices (id, name, latitude, longitude, especial)
-                VALUES (%s, %s, %s, %s, %s)
-                ON CONFLICT (id) DO NOTHING
-            """, (node_id, f"node_{node_id}", data["y"], data["x"]),"false")
-        else:
-            cur.execute("""
-                INSERT INTO vertices (id, name, latitude, longitude, especial)
-                VALUES (%s, %s, %s, %s, %s)
-                ON CONFLICT (id) DO NOTHING
-            """, (node_id, f"node_{node_id}", data["y"], data["x"]),"true")
+        cur.execute("""
+            INSERT INTO vertices (id, name, latitude, longitude)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING
+        """, (node_id, '', data["y"], data["x"]))
 
 
     print("Inserindo períodos")
@@ -66,7 +59,7 @@ def populate():
         j += 1
         edge_id = cur.fetchone()[0]
 
-        length = data.get("length", 1.0)
+        length = float(data.get("length", 1.0))
         cur.execute("""
             INSERT INTO edge_attributes (edge_id, weight_distance, weight_time, time_period_id)
             VALUES (%s, %s, %s, %s)

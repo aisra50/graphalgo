@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RouteData, Theme } from '../types';
+import { Lugar, Theme } from '../types';
 import { 
   Moon, 
   Sun, 
@@ -14,9 +14,10 @@ import Tabs from './Tabs';
 interface SidebarProps {
   onCalculate: (origin: string, dest: string, turno: 'dia'|'noite') => void;
   loading: boolean;
-  routeData: RouteData | null;
   theme: Theme;
+  lugares: Lugar[];
   onToggleTheme: () => void;
+  setMostraMapa: () => void;
 }
 
 type FeatureTab = 'route' | 'meeting' | 'connectivity';
@@ -24,7 +25,9 @@ type FeatureTab = 'route' | 'meeting' | 'connectivity';
 const Sidebar: React.FC<SidebarProps> = ({ 
   loading, 
   theme, 
-  onToggleTheme 
+  lugares,
+  onToggleTheme,
+  setMostraMapa 
 }) => {
 
   const isDark = theme === Theme.NIGHT;
@@ -67,17 +70,17 @@ const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
         
-        <Tabs setActiveTab={setActiveTab} activeTab={activeTab} isDark={isDark}/>
+        <Tabs setActiveTab={setActiveTab} activeTab={activeTab} isDark={isDark} setMostraMapa={setMostraMapa}/>
       </div>
 
       {/* BODY */}
       <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pb-6">
 
-        {activeTab === 'route' && <SecaoCalcularRota isDark={isDark} loading={loading}/>}
+        {activeTab === 'route' && <SecaoCalcularRota isDark={isDark} loading={loading} lugares={lugares} setMostraMapa={setMostraMapa}/>}
 
-        {activeTab === 'meeting' && <SecaoPontoEncontro isDark={isDark}/>}
+        {activeTab === 'meeting' && <SecaoPontoEncontro isDark={isDark} lugares={lugares} setMostraMapa={setMostraMapa}/>}
 
-        {activeTab === 'connectivity' && <SecaoComponenteConexo isDark={isDark}/>}
+        {activeTab === 'connectivity' && <SecaoComponenteConexo isDark={isDark} lugares={lugares}/>}
 
       </div>
     </div>
