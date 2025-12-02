@@ -14,8 +14,8 @@ def get_special_points():
         WHERE especial = TRUE
     """)
     data = [
-        {"id": vid, "nome": nome, "x": lon, "y": lat}
-        for vid, nome, lat, lon in cur.fetchall()
+        {"id": vid, "name": name, "x": lon, "y": lat}
+        for vid, name, lat, lon in cur.fetchall()
     ]
 
     cur.close()
@@ -123,8 +123,8 @@ def lugares():
     """)
 
     resultados = [
-        {"nome": nome, "id": vid}
-        for vid, nome in cur.fetchall()
+        {"name": name, "id": vid}
+        for vid, name in cur.fetchall()
     ]
 
     cur.close()
@@ -192,7 +192,7 @@ def ponto_encontro():
         
         descricao = f"({y:.6f}, {x:.6f})"
         if melhor_especial:
-            descricao += f", próximo a {melhor_especial['nome']}"
+            descricao += f", próximo a {melhor_especial['name']}"
         return jsonify({
             "imagem": f"{filename}",
             "ponto-encontro": descricao
@@ -200,6 +200,74 @@ def ponto_encontro():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/ida-e-volta", methods=["POST"])
+def ida_e_volta():
+    data = request.get_json()
+    ponto = data.get("ponto-encontro")
+    amigos = data.get("casas-amigos")
+
+    if ponto is None or not amigos:
+        return jsonify({"error": "ponto-encontro e casas-amigos são obrigatórios"}), 400
+
+    # 1. Carregar grafos
+    G_dia = load_graph_from_db("dia")       # usado para ida
+    G_noite = load_graph_from_db("noite")   # usado para volta
+
+    # ----------------------------
+    # 2. VERIFICAR IDA (dia): A -> ponto
+    # ----------------------------
+    ida_falha = []
+    for amigo in amigos:
+        try:
+            nx.shortest_path(G_dia, source=amigo, target=ponto, weight="weight")
+        except nx.NetworkXNoPath:
+            ida_falha.append(amigo)
+
+    # ----------------------------
+    # 3. VERIFICAR VOLTA (noite): ponto -> A
+    # ----------------------------
+    volta_falha = []
+    for amigo in amigos:
+        try:
+            nx.shortest_path(G_noite, source=ponto, target=amigo, weight="weight")
+        except nx.NetworkXNoPath:
+            volta_falha.append(amigo)
+
+    # ----------------------------
+    # 4. CASO TODOS CONSIGAM
+    # ----------------------------
+    if not ida_falha and not volta_falha:
+        return jsonify({
+            "possivel": True,
+            "ida": "ok",
+            "volta": "ok"
+        })
+
+    # ----------------------------
+    # 5. CASO NÃO CONSIGAM: retornar lista de quem falha
+    # ----------------------------
+    conn = get_connection()
+    cur = conn.cursor()
+
+    impossiveis = list(set(ida_falha + volta_falha))
+    names = []
+
+    if impossiveis:
+        placeholders = ",".join(["%s"] * len(impossiveis))
+        cur.execute(f"SELECT id, name FROM vertices WHERE id IN ({placeholders})", impossiveis)
+        names = [{"id": row[0], "name": row[1]} for row in cur.fetchall()]
+
+
+    conn.close()
+
+    return jsonify({
+        "possivel": False,
+        "faltam_ida": ida_falha,
+        "faltam_volta": volta_falha,
+        "amigos": names
+    })
+
 
 @app.route('/mensagem')
 def mensagem():
