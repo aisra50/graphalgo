@@ -1,6 +1,6 @@
 # Arquivo para funções que envolvam conectar com o banco de dados
 db = "graphalgo" #Nome do banco de dados
-user = "gustavo" #Nome do usuário
+user = "leao" #Nome do usuário
 
 import psycopg2
 import networkx as nx

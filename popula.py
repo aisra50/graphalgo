@@ -12,7 +12,7 @@ def populate():
     G = nx.relabel_nodes(G, mapping)
 
     print("Conectando ao banco...")
-    conn = psycopg2.connect("dbname=graphalgo user=gustavo")
+    conn = psycopg2.connect("dbname=graphalgo user=leao")
     cur = conn.cursor()
 
     print("Inserindo vértices...")
