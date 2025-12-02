@@ -4,7 +4,7 @@ import osmnx as ox
 from shapely.geometry import LineString
 import heapq
 import math
-
+import os
 def dijkstra(G,source, target, weight="length"):
 
     # distância inicial infinita
@@ -91,3 +91,25 @@ def plot_graph(G): #Mostra a imagem do bairro
         show=True,
         close=True
     )
+
+def plot_meeting_point(G, point_id):
+
+    plt.figure(figsize=(8, 8))
+
+    # plot grafo
+    pos = {n: (float(G.nodes[n]["x"]), float(G.nodes[n]["y"])) for n in G.nodes()}
+    # pos = {n: (G.nodes[n]["x"], G.nodes[n]["y"]) for n in G.nodes()}
+
+    nx.draw(G, pos, node_size=10, edge_color="gray", node_color="lightblue")
+
+    # ponto de encontro
+    px = G.nodes[point_id]["x"]
+    py = G.nodes[point_id]["y"]
+    plt.scatter([px], [py], s=200, c="red", zorder=10)
+    plt.text(px, py, "Ponto de Encontro", fontsize=12, color="red")
+
+    # salvar
+    filename = f"meeting_point_{point_id}.png"
+    plt.savefig(filename, dpi=200)
+    plt.close()
+    return filename
