@@ -51,7 +51,7 @@ const Map: React.FC<MapProps> = ({ theme, showMap, imageUrl }) => {
       </div>
       }
       <div>
-        {showMap && <img src={`${imageUrl}?ts=${Date.now()}&t=${showMap}`}/>}
+        {showMap && <img style={{ maxWidth: "600px", width: "100%", height: "auto" }} src={`${imageUrl}?ts=${Date.now()}&t=${showMap}`}/>}
       </div>
     </div>
   );
